@@ -4,7 +4,7 @@ export PATH=/usr/bin/php:$PATH
 
 # Git
 cd ..
-git config --global --add safe.directory /home/svkruik/Documents/GitHub/Overway
+git config --global --add safe.directory "$HOME/Documents/GitHub/Overway"
 git reset --hard
 git pull
 echo "Git setup complete"
