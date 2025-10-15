@@ -1,0 +1,140 @@
+:root,
+:root.overway {
+    /* Informational */
+    --color-info: #7aa0c4;
+    --color-success: #599862;
+    --color-warning: #FAAB78;
+    --color-danger: #D04848;
+    --color-accent: #E94C2D;
+
+    /* Border Radii */
+    --border-radius-low: 5px;
+    --border-radius-mid: 10px;
+    --border-radius-high: 20px;
+
+    --color-background: #FFFFFF;
+    --color-fill: #F4F7FB;
+    --color-fill-dark: #E3EAF5;
+    --color-border: #F2F2F2;
+    --color-border-dark: #DEDEDE;
+    --color-text: #484848;
+    --color-text-light: #636363;
+    --color-text-header: #111111;
+}
+
+:root.administrator {
+    --color-accent: #827FF0;
+}
+
+:root.platform {
+    --color-accent: #EC732F;
+}
+
+:root.commander {
+    --color-accent: #1FD4f6;
+}
+
+:root.docs {
+    --color-accent: #D75667;
+}
+
+/* HTML */
+body {
+    background: var(--color-background);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-optical-sizing: auto;
+}
+
+* {
+    color: var(--color-text);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: "Work Sans", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+strong {
+    color: var(--color-text-header);
+    font-weight: 600;
+}
+
+input,
+button {
+    border: none;
+    outline: none;
+    background-color: transparent;
+    font-weight: 500;
+}
+
+span {
+    display: block;
+}
+
+input,
+p,
+a,
+button {
+    font-size: 16px;
+}
+
+a,
+button,
+input[type=checkbox],
+.pointer {
+    cursor: pointer;
+}
+
+a,
+.no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+/* Custom Classes */
+.flex {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Color Classes */
+.color-info {
+    color: var(--color-info);
+}
+
+.color-success {
+    color: var(--color-success);
+}
+
+.color-warning {
+    color: var(--color-warning);
+}
+
+.color-danger {
+    color: var(--color-danger);
+}
