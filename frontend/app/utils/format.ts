@@ -3,7 +3,6 @@ import { Languages } from "~/assets/customTypes";
 
 /**
  * Converts a Date object to a human-readable time ago format.
- *
  * @param date Date object
  * @returns Formatted time ago string
  */
@@ -17,7 +16,6 @@ export function formatTimeAgo(date: Date): string {
 
 /**
  * Uppercases the first letter of a string.
- *
  * @param string The string to format
  * @returns Formatted string
  */
@@ -26,8 +24,16 @@ export function uppercaseFirstLetter(string: string): string {
 }
 
 /**
+ * Formats the application name by capitalizing the first letter and prefixing with "SK ".
+ * @param rawAppName The raw application name
+ * @returns Formatted application name
+ */
+export function formatAppName(rawAppName: string | undefined): string {
+    return rawAppName ? "SK " + uppercaseFirstLetter(rawAppName) : "SK Platform";
+}
+
+/**
  * Formats a number into a more readable format (e.g., 1K, 1M).
- *
  * @param num The number to format
  * @returns Formatted string
  */
@@ -56,6 +62,7 @@ export function normalizeUrl(url: string | { [lang in Languages]: string }): str
  * Use this function only in the backend.
  * Specifically for backend errors.
  * @param error The error to handle.
+ * @returns Formatted H3 error.
  */
 export function formatApiError(error: any): H3Error {
     const statusCode = error?.cause?.statusCode || (() => { logError(error); return 500; })();
@@ -70,6 +77,7 @@ export function formatApiError(error: any): H3Error {
 /**
  * Formats an error for the popup notification.
  * @param error The error to handle.
+ * @returns Formatted error.
  */
 export function formatError(error: any): Error {
     return createError({

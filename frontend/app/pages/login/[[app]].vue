@@ -7,6 +7,7 @@ import { uppercaseFirstLetter } from "~/utils/format";
 import { getAppPreset } from "~/utils/settings";
 const { $event } = useNuxtApp();
 const userStore = useUserStore();
+const userSession = useUserSession();
 const route = useRoute();
 const appName = route.params.app as AppTypes | undefined;
 if (!appName || !(appName satisfies AppTypes)) navigateTo("/login/overway");
@@ -39,6 +40,36 @@ async function submitLogin(): Promise<boolean> {
         if (!emailInput.value.length || !passwordInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
         username.value = await useFetchLoginEmail(emailInput.value, passwordInput.value);
         step.value = 2;
+        return true;
+    } catch (error: any) {
+        $event("popup", {
+            id: createTicket(4),
+            type: PromptTypes.danger,
+            message: error.message || "Something went wrong on our end. Please try again later.",
+            duration: 3,
+        } as PopupItem);
+        return false;
+    } finally {
+        toggleButtonState(loginButton.value, false);
+    }
+}
+
+async function continueLogin(): Promise<boolean> {
+    try {
+        if (isSubmissionInProgress.value) return false;
+        toggleButtonState(loginButton.value, true);
+
+        // TODO: Refresh session or re-validate token here
+
+        if (appName !== "overway") {
+            $event("popup", {
+                id: createTicket(4),
+                type: PromptTypes.success,
+                message: `Login successful! Welcome back ${userStore.user?.firstName}.`,
+                duration: 3,
+            } as PopupItem);
+            navigateTo(getAppPreset()?.redirectUrl || "", { external: true });
+        } else step.value = 4;
         return true;
     } catch (error: any) {
         $event("popup", {
@@ -160,7 +191,27 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
                     </h4>
                 </div>
             </div>
-            <form class="flex-col" @submit.prevent="submitLogin" v-if="step === 1">
+            <form class="flex-col" @submit.prevent="continueLogin"
+                v-if="step === 1 && userSession.loggedIn && userSession.user.value">
+                <div class="flex-col title">
+                    <h2>Welcome back,</h2>
+                    <strong>{{ userSession.user.value.firstName + ' ' + userSession.user.value.lastName }}</strong>
+                </div>
+                <p>Seems like you are logged in already. Would you like to continue with this account?</p>
+                <p>{{ userSession.user.value.email }}</p>
+                <button type="submit" class="flex button-login" ref="verificationButton"
+                    title="Continue with this account.">
+                    <span>Continue</span>
+                    <i class="fa-regular fa-arrow-right-to-bracket"></i>
+                </button>
+                <button type="button" class="flex" @click="userStore.signOut(); step = 1"
+                    title="Log in with a different account.">
+                    <span>Not you?</span>
+                    <i class="fa-regular fa-arrow-left"></i>
+                </button>
+                <small>Trouble signing in? If you are supposed to be here, you know who to contact.</small>
+            </form>
+            <form class="flex-col" @submit.prevent="submitLogin" v-else-if="step === 1">
                 <div class="flex-col title">
                     <h2>Welcome back,</h2>
                     <strong>{{ getAppPreset()?.userTitle }}</strong>
@@ -248,7 +299,7 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
                 </button>
                 <small>Trouble signing in? If you are supposed to be here, you know who to contact.</small>
             </form>
-            <form class="flex-col" @submit.prevent v-else>
+            <form class="flex-col" @submit.prevent v-else-if="step === 4">
                 <div class="flex-col title">
                     <h2>Log-In complete,</h2>
                     <strong>{{ username }}</strong>
@@ -256,6 +307,14 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
                 <p>You are now logged in to and able to use SK Platform.</p>
                 <p>Normally you would be redirected, but you do not have an app source.</p>
                 <p>You can close this tab.</p>
+            </form>
+            <form class="flex-col" v-else>
+                <div class="flex-col title">
+                    <h2>Something went wrong,</h2>
+                    <strong>Please try again later.</strong>
+                </div>
+                <p>If the problem persists, please contact an Administrator.</p>
+                <small>Trouble signing in? If you are supposed to be here, you know who to contact.</small>
             </form>
         </div>
     </main>

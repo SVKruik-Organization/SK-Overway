@@ -1,7 +1,7 @@
 import type { Pool } from "mariadb";
 import { database } from "#imports";
 import { z } from "zod";
-import { formatApiError } from "~/utils/format";
+import { formatApiError, formatAppName } from "~/utils/format";
 import { sendMail } from "~~/server/core/gmd/sendMail";
 
 // Validation schema for the request body
@@ -19,6 +19,7 @@ export default defineEventHandler(async (event): Promise<string> => {
         const parseResult = bodySchema.safeParse(await readBody(event));
         if (!parseResult.success) throw new Error("The form is not completed correctly. Please try again.", { cause: { statusCode: 1400 } });
         const { email, password } = parseResult.data;
+        const appName = formatAppName(getRouterParam(event, "app"));
 
         // Retrieve the user from the database
         const connection: Pool = await database("central");
@@ -35,10 +36,11 @@ export default defineEventHandler(async (event): Promise<string> => {
 
         // Send the email with a 6-digit code
         const verificationPin: number = Math.floor(100000 + Math.random() * 900000);
-        // await sendMail(email, "Login OTP", [
-        //     { "key": "firstName", "value": user.first_name || "user" },
-        //     { "key": "verificationPin", "value": verificationPin.toString() },
-        // ], "2fa-code");
+        await sendMail(email, "Login OTP", [
+            { "key": "firstName", "value": user.first_name || "user" },
+            { "key": "platformName", "value": appName },
+            { "key": "verificationPin", "value": verificationPin.toString() },
+        ], "2fa-code");
 
         // Delete any existing verification codes for the same email and reason
         // Insert the verification code into the database

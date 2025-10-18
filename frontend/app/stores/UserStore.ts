@@ -22,7 +22,6 @@ export const useUserStore = defineStore("userStore", {
 
             this.setUser(null);
             clearSession();
-            navigateTo("/");
         },
     },
     getters: {

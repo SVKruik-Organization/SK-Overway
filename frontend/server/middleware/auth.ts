@@ -8,7 +8,9 @@ export default defineEventHandler(async (event) => {
         const user = (await getUserSession(event)).user;
         const publicPaths = ["/api/status"];
 
-        if (!user && !publicPaths.includes(requestUrl) && !requestUrl.startsWith("/api/auth/"))
+        if (!user && !publicPaths.includes(requestUrl)
+            && !requestUrl.startsWith("/api/auth/")
+            && !requestUrl.startsWith("/api/_auth/"))
             throw new Error("This resource requires authentication.", { cause: { statusCode: 1401 } });
     } catch (error: any) {
         throw formatApiError(error);

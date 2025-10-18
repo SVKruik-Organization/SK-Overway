@@ -31,6 +31,14 @@ export async function createUserSession(event: H3Event, user: {
             "language": user.language,
         },
         loggedInAt: new Date(),
+    }, {
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        cookie: {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+        }
     });
 
     // Update the last login date in the database

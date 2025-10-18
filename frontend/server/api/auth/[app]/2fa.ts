@@ -3,7 +3,8 @@ import { database } from "#imports";
 import { z } from "zod";
 import { Languages, LoginResponse, UserTypes } from "~/assets/customTypes";
 import { createUserSession } from "#imports";
-import { formatApiError } from "~/utils/format";
+import { formatApiError, formatAppName } from "~/utils/format";
+import { sendMail } from "~~/server/core/gmd/sendMail";
 
 // Validation schema for the request body
 const bodySchema = z.object({
@@ -21,6 +22,7 @@ export default defineEventHandler(async (event): Promise<LoginResponse> => {
         const parseResult = bodySchema.safeParse(await readBody(event));
         if (!parseResult.success) throw new Error("The form is not completed correctly. Please try again.", { cause: { statusCode: 1400 } });
         const { email, pin } = parseResult.data;
+        const appName = formatAppName(getRouterParam(event, "app"));
 
         // Retrieve the verification code from the database
         const connection: Pool = await database("central");
@@ -39,6 +41,11 @@ export default defineEventHandler(async (event): Promise<LoginResponse> => {
         // Validate the response
         const user = response[0];
         if (!user) throw new Error("Email or password is incorrect. Please check your credentials and try again.", { cause: { statusCode: 1401 } });
+
+        await sendMail(email, "New Login", [
+            { "key": "firstName", "value": user.first_name || "user" },
+            { "key": "platformName", "value": appName },
+        ], "new-login");
 
         // Create the session
         const session = await createUserSession(event, {
