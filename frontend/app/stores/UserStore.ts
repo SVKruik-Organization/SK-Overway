@@ -1,18 +1,18 @@
-import type { UserData } from "~/assets/customTypes";
 import { defineStore } from "pinia";
+import type { User } from "#auth-utils";
 
 export const useUserStore = defineStore("userStore", {
     state: () => {
         return {
-            user: null as UserData | null,
+            user: null as User | null,
         };
     },
     persist: {
         storage: piniaPluginPersistedstate.localStorage(),
     },
     actions: {
-        setUser(userData: UserData | null): void {
-            this.user = userData;
+        setUser(user: User | null): void {
+            this.user = user;
         },
         async signOut(): Promise<void> {
             if (!this.isLoggedIn) return;
@@ -21,7 +21,7 @@ export const useUserStore = defineStore("userStore", {
             useNotificationStore().clear();
 
             this.setUser(null);
-            clearSession();
+            await clearSession();
         },
     },
     getters: {

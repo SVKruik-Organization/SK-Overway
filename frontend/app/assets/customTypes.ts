@@ -1,20 +1,11 @@
+import type { User } from "#auth-utils";
+
 export enum AppTypes {
     OVERWAY = "overway",
     ADMINISTRATOR = "administrator",
     PLATFORM = "platform",
     COMMANDER = "commander",
     DOCS = "docs",
-}
-
-// Login Response
-export type UserData = {
-    "id": number,
-    "firstName": string,
-    "lastName": string,
-    "email": string,
-    "type": UserTypes,
-    "imageName": string,
-    "language": Languages,
 }
 
 export enum UserTypes {
@@ -96,5 +87,5 @@ export enum NotificationTypes {
 }
 
 export type LoginResponse = {
-    "user": UserData,
+    "user": User,
 }

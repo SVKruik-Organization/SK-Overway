@@ -12,7 +12,7 @@ const bodySchema = z.object({
 
 /**
  * Login using email and password
- * See /auth.d.ts for the session type
+ * @returns The full name of the user, used for the UI.
  */
 export default defineEventHandler(async (event): Promise<string> => {
     try {

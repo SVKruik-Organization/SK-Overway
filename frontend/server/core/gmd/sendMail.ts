@@ -12,7 +12,7 @@ export async function sendMail(
     }>,
     fileName: string,
 ): Promise<boolean> {
-    // For development purposes, skip sending emails
+    // TODO For development purposes, skip sending emails
     return true;
     try {
         // Email login

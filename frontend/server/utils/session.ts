@@ -1,6 +1,7 @@
+import { User, UserSession } from "#auth-utils";
 import type { H3Event } from "h3";
 import { Pool } from "mariadb";
-import { Languages, UserData, UserTypes } from "~/assets/customTypes";
+import { Languages, UserTypes } from "~/assets/customTypes";
 
 /**
  * Creates and returns a user session.
@@ -19,8 +20,8 @@ export async function createUserSession(event: H3Event, user: {
     type: UserTypes,
     imageName: string | null
     language: Languages,
-}, connection: Pool): Promise<UserData> {
-    await setUserSession(event, {
+}, connection: Pool): Promise<User> {
+    const userSession: UserSession = await replaceUserSession(event, {
         user: {
             "id": user.id,
             "firstName": user.firstName,
@@ -46,5 +47,5 @@ export async function createUserSession(event: H3Event, user: {
     await connection.query(`UPDATE ${tableName} SET date_last_login = CURRENT_TIMESTAMP WHERE id = ?;`, [user.id]);
 
     // Return the user data
-    return (await getUserSession(event)).user as UserData;
+    return userSession.user as User;
 }

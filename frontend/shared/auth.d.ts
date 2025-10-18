@@ -6,7 +6,7 @@ declare module "#auth-utils" {
         id: number;
         firstName: string;
         lastName: string;
-        email: string | null;
+        email: string | null; // null for Guest users
         type: UserTypes;
         imageName: string | null;
         language: Languages;

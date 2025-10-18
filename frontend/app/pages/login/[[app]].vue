@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { AppTypes, PromptTypes, type LoginResponse, type PopupItem, type UserData } from "~/assets/customTypes";
+import { AppTypes, PromptTypes, type LoginResponse, type PopupItem } from "~/assets/customTypes";
 import { useFetchLoginEmail } from "~/utils/fetch/auth/useFetchLoginEmail";
 import { useFetchLoginGuest } from "~/utils/fetch/auth/useFetchLoginGuest";
+import { useFetchRefreshSession } from "~/utils/fetch/auth/useFetchRefresh";
 import { useFetchSubmit2FA } from "~/utils/fetch/auth/useFetchSubmit2FA";
 import { uppercaseFirstLetter } from "~/utils/format";
 import { getAppPreset } from "~/utils/settings";
@@ -23,13 +24,13 @@ const loginButton = useTemplateRef<HTMLButtonElement>("loginButton");
 const verificationButton = useTemplateRef<HTMLButtonElement>("verificationButton");
 const guestButton = useTemplateRef<HTMLButtonElement>("guestButton");
 const isSubmissionInProgress: Ref<boolean> = ref(false);
-const username: Ref<string> = ref(getAppPreset()?.userTitle || "User");
+const username: Ref<string | null> = ref(null);
 
 // Methods
 
 /**
  * Try a user login with email and password.
- * If successful, move to step 2 (2FA).
+ * If successful, move to MFA (step 2).
  * @returns Status of the operation.
  */
 async function submitLogin(): Promise<boolean> {
@@ -38,6 +39,7 @@ async function submitLogin(): Promise<boolean> {
         toggleButtonState(loginButton.value, true);
 
         if (!emailInput.value.length || !passwordInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
+        await userStore.signOut(); // Clear any existing session
         username.value = await useFetchLoginEmail(emailInput.value, passwordInput.value);
         step.value = 2;
         return true;
@@ -54,23 +56,29 @@ async function submitLogin(): Promise<boolean> {
     }
 }
 
+/**
+ * Continue login for an already logged-in user.
+ * If successful, log the user in and redirect to the app.
+ * @returns Status of the operation.
+ */
 async function continueLogin(): Promise<boolean> {
     try {
         if (isSubmissionInProgress.value) return false;
         toggleButtonState(loginButton.value, true);
+        if (!userSession.loggedIn || !userSession.user.value) {
+            step.value = 1;
+            throw new Error("No active session found. Please log in again.");
 
-        // TODO: Refresh session or re-validate token here
+            // Guest users can be characterized by the absence of an email.
+            // For safety always force them to log in again.
+        } else if (!userSession.user.value.email) {
+            step.value = 1;
+            throw new Error("Guest users cannot continue their session. Please log in again.");
+        }
 
-        if (appName !== "overway") {
-            $event("popup", {
-                id: createTicket(4),
-                type: PromptTypes.success,
-                message: `Login successful! Welcome back ${userStore.user?.firstName}.`,
-                duration: 3,
-            } as PopupItem);
-            navigateTo(getAppPreset()?.redirectUrl || "", { external: true });
-        } else step.value = 4;
-        return true;
+        const response: LoginResponse = await useFetchRefreshSession();
+        username.value = `${userSession.user.value.firstName} ${userSession.user.value.lastName}`;
+        return handleSuccess(response);
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -96,19 +104,7 @@ async function submit2fa(): Promise<boolean> {
 
         if (!emailInput.value.length || !verificationInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
         const response: LoginResponse = await useFetchSubmit2FA(emailInput.value, verificationInput.value);
-        const { user } = response;
-        userStore.setUser(user);
-
-        if (appName !== "overway") {
-            $event("popup", {
-                id: createTicket(4),
-                type: PromptTypes.success,
-                message: `Login successful! Welcome back ${userStore.user?.firstName}.`,
-                duration: 3,
-            } as PopupItem);
-            navigateTo(getAppPreset()?.redirectUrl || "", { external: true });
-        } else step.value = 4;
-        return true;
+        return handleSuccess(response);
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -123,7 +119,7 @@ async function submit2fa(): Promise<boolean> {
 }
 
 /**
- * Try a guest user using a code.q
+ * Try a guest user login using a code.
  * @returns Status of the operation.
  */
 async function submitGuest(): Promise<boolean> {
@@ -132,17 +128,8 @@ async function submitGuest(): Promise<boolean> {
         toggleButtonState(guestButton.value, true);
 
         if (!guestInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
-        const response: UserData = await useFetchLoginGuest(guestInput.value);
-        userStore.setUser(response);
-
-        $event("popup", {
-            id: createTicket(4),
-            type: PromptTypes.success,
-            message: `Login successful! Welcome ${userStore.user?.firstName}.`,
-            duration: 3,
-        } as PopupItem);
-        navigateTo(getAppPreset()?.redirectUrl || "", { external: true });
-        return true;
+        const response: LoginResponse = await useFetchLoginGuest(guestInput.value);
+        return handleSuccess(response);
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -161,12 +148,13 @@ async function submitGuest(): Promise<boolean> {
  * @param button The button element to toggle.
  * @param disabled Whether to disable (true) or enable (false) the button.
  */
-function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) {
+function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean): void {
     isSubmissionInProgress.value = disabled;
     if (!button) return;
     button.disabled = disabled;
     button.style.pointerEvents = disabled ? "none" : "auto";
     button.style.opacity = disabled ? "0.6" : "1";
+
     const iconElement = button.querySelector("i");
     if (iconElement) {
         if (disabled) {
@@ -177,6 +165,42 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
             iconElement.classList.remove("fa-spin");
         }
     }
+}
+
+/**
+ * Show a popup on successful login and redirect if necessary.
+ * @param loginResponse The response from the API.
+ * @returns Status of the operation.
+ */
+function handleSuccess(loginResponse: LoginResponse): boolean {
+    const { user } = loginResponse;
+    userStore.setUser(user);
+
+    if (appName !== "overway") {
+        $event("popup", {
+            id: createTicket(4),
+            type: PromptTypes.success,
+            message: `Login successful! Welcome back ${user.firstName}. Redirecting you now!`,
+            duration: 3,
+        } as PopupItem);
+        // TODO For development purposes, skip redirecting
+        // navigateTo(getAppPreset()?.redirectUrl || "", { external: true });
+        step.value = 4;
+    } else step.value = 4;
+    return true;
+}
+
+/**
+ * Get the username to display.
+ * @param backup Optional backup string if no user is logged in.
+ * @returns The username string.
+ */
+function getUsername(backup?: string): string {
+    if (username.value) return username.value;
+    if (userSession.user.value) {
+        return `${userSession.user.value.firstName} ${userSession.user.value.lastName}`;
+    }
+    return backup || getAppPreset()?.userTitle || "User";
 }
 </script>
 
@@ -192,10 +216,10 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
                 </div>
             </div>
             <form class="flex-col" @submit.prevent="continueLogin"
-                v-if="step === 1 && userSession.loggedIn && userSession.user.value">
+                v-if="step === 1 && userSession.loggedIn && userSession.user.value && userSession.user.value.email">
                 <div class="flex-col title">
                     <h2>Welcome back,</h2>
-                    <strong>{{ userSession.user.value.firstName + ' ' + userSession.user.value.lastName }}</strong>
+                    <strong>{{ getUsername() }}</strong>
                 </div>
                 <p>Seems like you are logged in already. Would you like to continue with this account?</p>
                 <p>{{ userSession.user.value.email }}</p>
@@ -242,7 +266,7 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
                         <hr>
                         </hr>
                     </div>
-                    <button type="button" class="flex" @click="step = 3"
+                    <button type="button" class="flex" @click="userStore.signOut(); step = 3"
                         title="Login as a Guest with an Administrator provided PIN.">
                         <span>Guest PIN</span>
                         <i class="fa-regular fa-id-badge"></i>
@@ -253,7 +277,7 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
             <form class="flex-col" @submit.prevent="submit2fa" v-else-if="step === 2">
                 <div class="flex-col title">
                     <h2>Almost there,</h2>
-                    <strong>{{ username }}</strong>
+                    <strong>{{ getUsername() }}</strong>
                 </div>
                 <div class="flex input-container">
                     <label for="verification" v-if="!verificationInput.length" class="flex">
@@ -301,12 +325,12 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean) 
             </form>
             <form class="flex-col" @submit.prevent v-else-if="step === 4">
                 <div class="flex-col title">
-                    <h2>Log-In complete,</h2>
-                    <strong>{{ username }}</strong>
+                    <h2>Good to have you{{ userSession.user.value?.email ? ' back' : '' }},</h2>
+                    <strong>{{ getUsername() }}</strong>
                 </div>
                 <p>You are now logged in to and able to use SK Platform.</p>
                 <p>Normally you would be redirected, but you do not have an app source.</p>
-                <p>You can close this tab.</p>
+                <p>You can close this tab safely and start using everything SK Platform.</p>
             </form>
             <form class="flex-col" v-else>
                 <div class="flex-col title">
