@@ -1,4 +1,3 @@
-import { LoginResponse } from "~/assets/customTypes";
 import { formatApiError, formatAppName } from "~/utils/format";
 import { UserEntity } from "~~/server/core/ges/user";
 import { User } from "#auth-utils";
@@ -8,7 +7,7 @@ import { Pool } from "mariadb/*";
  * Refresh an existing user session. Not allowed for guest users.
  * @returns The user info and session information.
  */
-export default defineEventHandler(async (event): Promise<LoginResponse> => {
+export default defineEventHandler(async (event): Promise<void> => {
     try {
         const appName = formatAppName(getRouterParam(event, "app"));
         const userSession: User | undefined = (await getUserSession(event)).user;
@@ -19,7 +18,7 @@ export default defineEventHandler(async (event): Promise<LoginResponse> => {
         // Create the user and login
         const connection: Pool = await database("central");
         const user: UserEntity = new UserEntity(null, userSession.email, appName, connection);
-        return await user.login(event, {
+        await user.login(event, {
             disableSendMail: true
         });
     } catch (error: any) {

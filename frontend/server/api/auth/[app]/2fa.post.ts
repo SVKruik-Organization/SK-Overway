@@ -1,7 +1,6 @@
 import type { Pool } from "mariadb";
 import { database } from "#imports";
 import { z } from "zod";
-import { LoginResponse } from "~/assets/customTypes";
 import { formatApiError, formatAppName } from "~/utils/format";
 import { UserEntity } from "~~/server/core/ges/user";
 
@@ -16,7 +15,7 @@ const bodySchema = z.object({
  * If successful, creates a session for the user
  * @returns The user info and session information.
  */
-export default defineEventHandler(async (event): Promise<LoginResponse> => {
+export default defineEventHandler(async (event): Promise<void> => {
     try {
         const parseResult = bodySchema.safeParse(await readBody(event));
         if (!parseResult.success) throw new Error("The form is not completed correctly. Please try again.", { cause: { statusCode: 1400 } });
@@ -30,7 +29,7 @@ export default defineEventHandler(async (event): Promise<LoginResponse> => {
 
         // Create the user and login
         const user: UserEntity = new UserEntity(null, email, appName, connection);
-        return await user.login(event);
+        await user.login(event);
     } catch (error: any) {
         throw formatApiError(error);
     }

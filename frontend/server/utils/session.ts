@@ -1,7 +1,7 @@
 import { User, UserSession } from "#auth-utils";
 import type { H3Event } from "h3";
 import { Pool } from "mariadb";
-import { Languages, UserTypes } from "~/assets/customTypes";
+import { UserTypes } from "~/assets/customTypes";
 
 /**
  * Creates and returns a user session.
@@ -12,15 +12,7 @@ import { Languages, UserTypes } from "~/assets/customTypes";
  * @param connection The database connection to use
  * @returns The user data stored in the session
  */
-export async function createUserSession(event: H3Event, user: {
-    id: number;
-    firstName: string,
-    lastName: string | undefined,
-    email: string | null,
-    type: UserTypes,
-    imageName: string | null
-    language: Languages,
-}, connection: Pool): Promise<User> {
+export async function createUserSession(event: H3Event, user: User, connection: Pool): Promise<User> {
     const userSession: UserSession = await replaceUserSession(event, {
         user: {
             "id": user.id,

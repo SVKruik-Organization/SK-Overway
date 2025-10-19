@@ -1,5 +1,5 @@
 import { Pool } from "mariadb/*";
-import { Languages, LoginResponse, UserTypes } from "~/assets/customTypes";
+import { Languages, UserTypes } from "~/assets/customTypes";
 import { H3Event } from "h3";
 import { sendMail } from "../gmd/sendMail";
 
@@ -39,7 +39,7 @@ export class GuestEntity {
         this.code = response[0].password;
     }
 
-    async login(event: H3Event, config?: LoginConfig): Promise<LoginResponse> {
+    async login(event: H3Event, config?: LoginConfig): Promise<void> {
         if (this.id === null && this.code === null) throw new Error("ID or code must be provided to fetch Guest.", { cause: { statusCode: 1400 } });
 
         // Fetch additional PII
@@ -64,7 +64,7 @@ export class GuestEntity {
         ], "new-guest-login");
 
         // Create the session
-        const session = await createUserSession(event, {
+        await createUserSession(event, {
             "id": this.id,
             "firstName": additionalData[0].first_name,
             "lastName": additionalData[0].last_name,
@@ -75,8 +75,5 @@ export class GuestEntity {
         }, this.database);
 
         if (!config?.disableEndConnection) await this.database.end();
-        return {
-            "user": session
-        };
     }
 }

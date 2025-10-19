@@ -76,7 +76,8 @@ strong {
 }
 
 input,
-button {
+button,
+select {
     border: none;
     outline: none;
     background-color: transparent;
@@ -93,7 +94,8 @@ button {
 a,
 button,
 input[type=checkbox],
-.pointer {
+.pointer,
+select {
     cursor: pointer;
 }
 

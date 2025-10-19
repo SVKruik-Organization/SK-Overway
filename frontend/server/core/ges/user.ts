@@ -1,5 +1,5 @@
 import { Pool } from "mariadb/*";
-import { Languages, LoginResponse, UserTypes } from "~/assets/customTypes";
+import { Languages, UserTypes } from "~/assets/customTypes";
 import { H3Event } from "h3";
 import { sendMail } from "../gmd/sendMail";
 
@@ -39,7 +39,7 @@ export class UserEntity {
         this.email = response[0].email;
     }
 
-    async login(event: H3Event, config?: LoginConfig): Promise<LoginResponse> {
+    async login(event: H3Event, config?: LoginConfig): Promise<void> {
         if (this.id === null && this.email === null) throw new Error("Either ID or email must be provided to fetch user.", { cause: { statusCode: 1400 } });
 
         // Fetch additional PII
@@ -61,7 +61,7 @@ export class UserEntity {
         ], "new-login");
 
         // Create the session
-        const session = await createUserSession(event, {
+        await createUserSession(event, {
             "id": this.id,
             "firstName": additionalData[0].first_name,
             "lastName": additionalData[0].last_name,
@@ -72,8 +72,5 @@ export class UserEntity {
         }, this.database);
 
         if (!config?.disableEndConnection) await this.database.end();
-        return {
-            "user": session
-        };
     }
 }

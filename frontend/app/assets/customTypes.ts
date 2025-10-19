@@ -35,23 +35,6 @@ export enum PromptTypes {
     danger = "danger"
 }
 
-export type NotificationItem = {
-    "user_id": number;
-    "type": NotificationTypes;
-    "level": PromptTypes;
-    "data": {
-        "message": string;
-        "details"?: string;
-    };
-    "url": string;
-    "source": string;
-    "is_read": boolean;
-    "is_silent": boolean;
-    "ticket": string;
-    "date_expiry": Date;
-    "date_creation": Date;
-};
-
 export type DateFormat = {
     "date": string,
     "time": string,
@@ -67,9 +50,6 @@ export enum LogTypes {
     none = "NONE",
 }
 
-export enum CronJobTypes {
-}
-
 // Uplink Network Payload
 export type UplinkMessage = {
     sender: string;
@@ -80,12 +60,3 @@ export type UplinkMessage = {
     content: string;
     timestamp: Date;
 };
-
-export enum NotificationTypes {
-    initialize = "initialize",
-    acknowledge = "ack",
-}
-
-export type LoginResponse = {
-    "user": User,
-}

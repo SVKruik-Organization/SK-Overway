@@ -1,21 +1,8 @@
 // Website settings and configuration
 
-import { AppTypes, NotificationTypes } from "~/assets/customTypes";
+import { AppTypes } from "~/assets/customTypes";
 
 const config = useRuntimeConfig();
-
-
-/**
- * Returns an array of notification types that should not be shown nor persisted.
- * This does not prohibit sending them to the client.
- * @returns An array of notification types that should be excluded.
- */
-export function getNotificationExclusions(): Array<NotificationTypes> {
-    return [
-        NotificationTypes.initialize,
-        NotificationTypes.acknowledge,
-    ];
-}
 
 // Preset configurations for different applications
 const appPresets: Record<AppTypes, {

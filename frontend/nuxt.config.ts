@@ -1,33 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
-    nitro: {
-        experimental: {
-            websocket: true
-        }
-    },
     compatibilityDate: "2024-11-01",
     devtools: { enabled: false },
     ssr: false,
     css: ["./app/assets/main.css"],
     modules: [
-        "@pinia/nuxt",
-        "pinia-plugin-persistedstate/nuxt",
         "nuxt-auth-utils",
-        "nuxt-cron",
     ],
-    cron: {
-        runOnInit: true,
-        timeZone: "Europe/Amsterdam",
-        jobsDir: "core/tss/jobs",
-    },
-    piniaPluginPersistedstate: {
-        storage: "sessionStorage",
-        auto: true,
-    },
-    pinia: {
-        storesDirs: ["./app/stores/**"],
-    },
     runtimeConfig: {
         databaseHost: "",
         databasePort: "",

@@ -1,13 +1,11 @@
 <script lang="ts" setup>
-import { AppTypes, PromptTypes, type LoginResponse, type PopupItem } from "~/assets/customTypes";
+import { AppTypes, PromptTypes, type PopupItem } from "~/assets/customTypes";
 import { useFetchLoginEmail } from "~/utils/fetch/auth/useFetchLoginEmail";
 import { useFetchLoginGuest } from "~/utils/fetch/auth/useFetchLoginGuest";
 import { useFetchRefreshSession } from "~/utils/fetch/auth/useFetchRefresh";
 import { useFetchSubmit2FA } from "~/utils/fetch/auth/useFetchSubmit2FA";
-import { uppercaseFirstLetter } from "~/utils/format";
 import { getAppPreset } from "~/utils/settings";
 const { $event } = useNuxtApp();
-const userStore = useUserStore();
 const userSession = useUserSession();
 const route = useRoute();
 const appName = route.params.app as AppTypes | undefined;
@@ -39,8 +37,9 @@ async function submitLogin(): Promise<boolean> {
         toggleButtonState(loginButton.value, true);
 
         if (!emailInput.value.length || !passwordInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
-        await userStore.signOut(); // Clear any existing session
+        await signOut(); // Clear any existing session
         username.value = await useFetchLoginEmail(emailInput.value, passwordInput.value);
+
         step.value = 2;
         return true;
     } catch (error: any) {
@@ -76,9 +75,9 @@ async function continueLogin(): Promise<boolean> {
             throw new Error("Guest users cannot continue their session. Please log in again.");
         }
 
-        const response: LoginResponse = await useFetchRefreshSession();
+        await useFetchRefreshSession();
         username.value = `${userSession.user.value.firstName} ${userSession.user.value.lastName}`;
-        return handleSuccess(response);
+        return handleSuccess();
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -103,8 +102,8 @@ async function submit2fa(): Promise<boolean> {
         toggleButtonState(verificationButton.value, true);
 
         if (!emailInput.value.length || !verificationInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
-        const response: LoginResponse = await useFetchSubmit2FA(emailInput.value, verificationInput.value);
-        return handleSuccess(response);
+        await useFetchSubmit2FA(emailInput.value, verificationInput.value);
+        return handleSuccess();
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -128,8 +127,8 @@ async function submitGuest(): Promise<boolean> {
         toggleButtonState(guestButton.value, true);
 
         if (!guestInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
-        const response: LoginResponse = await useFetchLoginGuest(guestInput.value);
-        return handleSuccess(response);
+        await useFetchLoginGuest(guestInput.value);
+        return handleSuccess();
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -169,18 +168,16 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean):
 
 /**
  * Show a popup on successful login and redirect if necessary.
- * @param loginResponse The response from the API.
  * @returns Status of the operation.
  */
-function handleSuccess(loginResponse: LoginResponse): boolean {
-    const { user } = loginResponse;
-    userStore.setUser(user);
+function handleSuccess(): boolean {
+    const firstName = userSession.user.value?.firstName || "User";
 
     if (appName !== "overway") {
         $event("popup", {
             id: createTicket(4),
             type: PromptTypes.success,
-            message: `Login successful! Welcome back ${user.firstName}. Redirecting you now!`,
+            message: `Login successful! Welcome back ${firstName}. Redirecting you now!`,
             duration: 3,
         } as PopupItem);
         // TODO For development purposes, skip redirecting
@@ -202,17 +199,43 @@ function getUsername(backup?: string): string {
     }
     return backup || getAppPreset()?.userTitle || "User";
 }
+
+/**
+ * Format the application name for display.
+ * @param app The application type.
+ * @returns The formatted application name.
+ */
+function changeApp(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    const selectedApp = selectElement.value as AppTypes;
+    navigateTo(`/login/${selectedApp}`);
+}
+
+/**
+ * Signs the user out by clearing the session.
+ */
+async function signOut(): Promise<void> {
+    await (useUserSession()).clear();
+}
 </script>
 
 <template>
-    <main class="flex">
+    <main class="flex" :class="`main-background-image-${appName || 'overway'}`">
         <div class="flex content-container">
             <div class="flex-col background-image-container">
                 <div class="background-image" :class="`background-image-${appName || 'overway'}`"></div>
                 <div class="flex-col title-container">
                     <h2>SK Overway SSO</h2>
-                    <h4 v-if="appName !== 'overway'">Working for SK {{ uppercaseFirstLetter(appName || 'overway') }}
-                    </h4>
+                    <div class="flex" v-if="appName !== 'overway'">
+                        <h4>Working for</h4>
+                        <select id="app-selector" @change="changeApp($event)"
+                            title="Select the application you want to log in to.">
+                            <option v-for="app in Object.values(AppTypes).filter(a => a !== 'overway')" :key="app"
+                                :value="app" :selected="app === appName">
+                                {{ formatAppName(app) }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <form class="flex-col" @submit.prevent="continueLogin"
@@ -228,7 +251,7 @@ function getUsername(backup?: string): string {
                     <span>Continue</span>
                     <i class="fa-regular fa-arrow-right-to-bracket"></i>
                 </button>
-                <button type="button" class="flex" @click="userStore.signOut(); step = 1"
+                <button type="button" class="flex" @click="signOut(); step = 1"
                     title="Log in with a different account.">
                     <span>Not you?</span>
                     <i class="fa-regular fa-arrow-left"></i>
@@ -266,7 +289,7 @@ function getUsername(backup?: string): string {
                         <hr>
                         </hr>
                     </div>
-                    <button type="button" class="flex" @click="userStore.signOut(); step = 3"
+                    <button type="button" class="flex" @click="signOut(); step = 3"
                         title="Login as a Guest with an Administrator provided PIN.">
                         <span>Guest PIN</span>
                         <i class="fa-regular fa-id-badge"></i>
@@ -381,15 +404,21 @@ form {
     font-weight: bold;
 }
 
-.title-container h4 {
+.title-container h4,
+.title-container select {
     color: var(--color-background);
     opacity: 0.6;
+}
+
+.title-container select {
+    appearance: none;
+    font-weight: 600;
+    font-size: medium;
 }
 
 .background-image {
     width: 100%;
     background: no-repeat center;
-    max-width: 1500px;
 }
 
 .background-image-overway {
@@ -397,6 +426,7 @@ form {
     background-size: 370%;
     background-position-x: -2200px;
     background-position-y: -1250px;
+    max-width: 1400px;
 }
 
 .background-image-administrator {
@@ -533,6 +563,29 @@ form > small {
 @media (width <=800px) {
     main {
         padding: 25px;
+        background: no-repeat center;
+    }
+
+    .main-background-image-overway {
+        background-image: url(/apps/overway.png);
+        background-size: 3000px;
+        background-position-x: -1400px;
+    }
+
+    .main-background-image-administrator {
+        background-image: url(/apps/administrator.png);
+    }
+
+    .main-background-image-platform {
+        background-image: url(/apps/platform.png);
+    }
+
+    .main-background-image-commander {
+        background-image: url(/apps/commander.png);
+    }
+
+    .main-background-image-docs {
+        background-image: url(/apps/docs.png);
     }
 
     .content-container {

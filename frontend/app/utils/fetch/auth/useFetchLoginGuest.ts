@@ -1,13 +1,12 @@
-import type { LoginResponse } from "~/assets/customTypes";
 /**
  * Create a new session for a guest user with a code.
  * @param code The guest code.
  * @returns The status of the operation.
  * @throws An error if the request fails.
  */
-export const useFetchLoginGuest = async (code: string): Promise<LoginResponse> => {
+export const useFetchLoginGuest = async (code: string): Promise<void> => {
     try {
-        const data = await $fetch(`/api/auth/${useRoute().params.app}/login/guest`, {
+        await $fetch(`/api/auth/${useRoute().params.app}/login/guest`, {
             method: "POST",
             body: {
                 code
@@ -16,9 +15,7 @@ export const useFetchLoginGuest = async (code: string): Promise<LoginResponse> =
                 "Content-Type": "application/json",
             },
         });
-        const { fetch: fetchSession } = useUserSession();
-        await fetchSession();
-        return data;
+        await useUserSession().fetch();
     } catch (error: any) {
         throw formatError(error);
     }

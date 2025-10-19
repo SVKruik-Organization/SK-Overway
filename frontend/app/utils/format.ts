@@ -58,7 +58,7 @@ export function normalizeUrl(url: string | { [lang in Languages]: string }): str
 }
 
 /**
- * Formats an H3 error for the popup notification.
+ * Formats an H3 (backend) error for the popup.
  * Use this function only in the backend.
  * Specifically for backend errors.
  * @param error The error to handle.
@@ -75,7 +75,7 @@ export function formatApiError(error: any): H3Error {
 }
 
 /**
- * Formats an error for the popup notification.
+ * Formats an error for the popup.
  * @param error The error to handle.
  * @returns Formatted error.
  */
