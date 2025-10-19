@@ -2,22 +2,18 @@
  * Submits the 2FA pin for verification.
  * @param email The email of the user.
  * @param pin The 2FA pin to submit.
- * @returns The status of the operation.
+ * @returns The token of the created session.
  * @throws An error if the request fails.
  */
-export const useFetchSubmit2FA = async (email: string, pin: string): Promise<void> => {
+export const useFetchSubmit2FA = async (email: string, pin: string): Promise<string> => {
     try {
-        await $fetch(`/api/auth/${useRoute().params.app}/2fa`, {
+        const token: string = await $fetch(`/api/auth/${useRoute().params.app}/2fa`, {
             method: "POST",
-            body: {
-                email,
-                pin,
-            },
-            headers: {
-                "Content-Type": "application/json",
-            },
+            body: { email, pin },
+            headers: { "Content-Type": "application/json" },
         });
         await useUserSession().fetch();
+        return token;
     } catch (error: any) {
         throw formatError(error);
     }

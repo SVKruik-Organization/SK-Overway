@@ -13,7 +13,7 @@ const bodySchema = z.object({
  * Login a guest user using a code.
  * @returns The user info and session information.
  */
-export default defineEventHandler(async (event): Promise<void> => {
+export default defineEventHandler(async (event): Promise<string> => {
     try {
         const parseResult = bodySchema.safeParse(await readBody(event));
         if (!parseResult.success) throw new Error("The form is not completed correctly. Please try again.", { cause: { statusCode: 1400 } });
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event): Promise<void> => {
         // Create the guest and login
         const connection: Pool = await database("central");
         const guest: GuestEntity = new GuestEntity(null, code, appName, connection);
-        await guest.login(event);
+        return await guest.login(event);
     } catch (error: any) {
         throw formatApiError(error);
     }

@@ -8,13 +8,13 @@ const config = useRuntimeConfig();
 const appPresets: Record<AppTypes, {
     name: string;
     userTitle: string;
-    redirectUrl: string;
+    redirectUrl: string | null;
     guestLoginEnabled: boolean;
 }> = {
     overway: {
         name: "Overway",
         userTitle: "User",
-        redirectUrl: config.public.appRedirectOverway,
+        redirectUrl: null,
         guestLoginEnabled: false,
     },
     administrator: {
@@ -50,7 +50,7 @@ const appPresets: Record<AppTypes, {
 export function getAppPreset(overwrite: AppTypes | undefined = undefined): {
     name: string;
     userTitle: string;
-    redirectUrl: string;
+    redirectUrl: string | null;
     guestLoginEnabled: boolean;
 } | undefined {
     if (overwrite) return appPresets[overwrite];

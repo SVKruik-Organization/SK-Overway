@@ -75,9 +75,9 @@ async function continueLogin(): Promise<boolean> {
             throw new Error("Guest users cannot continue their session. Please log in again.");
         }
 
-        await useFetchRefreshSession();
+        const token: string = await useFetchRefreshSession();
         username.value = `${userSession.user.value.firstName} ${userSession.user.value.lastName}`;
-        return handleSuccess();
+        return handleSuccess(token);
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -102,8 +102,8 @@ async function submit2fa(): Promise<boolean> {
         toggleButtonState(verificationButton.value, true);
 
         if (!emailInput.value.length || !verificationInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
-        await useFetchSubmit2FA(emailInput.value, verificationInput.value);
-        return handleSuccess();
+        const token: string = await useFetchSubmit2FA(emailInput.value, verificationInput.value);
+        return handleSuccess(token);
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -127,8 +127,8 @@ async function submitGuest(): Promise<boolean> {
         toggleButtonState(guestButton.value, true);
 
         if (!guestInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
-        await useFetchLoginGuest(guestInput.value);
-        return handleSuccess();
+        const token: string = await useFetchLoginGuest(guestInput.value);
+        return handleSuccess(token);
     } catch (error: any) {
         $event("popup", {
             id: createTicket(4),
@@ -168,21 +168,29 @@ function toggleButtonState(button: HTMLButtonElement | null, disabled: boolean):
 
 /**
  * Show a popup on successful login and redirect if necessary.
+ * @param token The token of the created session.
  * @returns Status of the operation.
  */
-function handleSuccess(): boolean {
-    const firstName = userSession.user.value?.firstName || "User";
+function handleSuccess(token: string): boolean {
+    const firstName: string = userSession.user.value?.firstName || "User";
+    const redirectUrl: string | null = getAppPreset()?.redirectUrl || null;
 
-    if (appName !== "overway") {
+    if (appName !== "overway" && redirectUrl) {
         $event("popup", {
             id: createTicket(4),
             type: PromptTypes.success,
             message: `Login successful! Welcome back ${firstName}. Redirecting you now!`,
             duration: 3,
         } as PopupItem);
-        // TODO For development purposes, skip redirecting
-        // navigateTo(getAppPreset()?.redirectUrl || "", { external: true });
-        step.value = 4;
+        navigateTo({
+            path: redirectUrl,
+            query: {
+                token
+            }
+        }, {
+            external: true,
+            replace: true,
+        });
     } else step.value = 4;
     return true;
 }

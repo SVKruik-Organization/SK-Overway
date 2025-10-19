@@ -2,6 +2,7 @@ import { Pool } from "mariadb/*";
 import { Languages, UserTypes } from "~/assets/customTypes";
 import { H3Event } from "h3";
 import { sendMail } from "../gmd/sendMail";
+import { createUserToken } from "~~/server/utils/session";
 
 type LoginConfig = {
     disableEndConnection?: boolean; // true to disable ending the DB connection after login
@@ -21,25 +22,7 @@ export class GuestEntity {
         this.database = database;
     }
 
-    async fetch(mode: "login" | "system"): Promise<void> {
-        if (this.id === null && this.code === null) throw new Error("ID or code must be provided to fetch Guest.", { cause: { statusCode: 1400 } });
-
-        const response: Array<{
-            "id": number,
-            "password": string,
-        }> = await this.database.query("SELECT id, password FROM guest WHERE id = ? OR password = ?;", [this.id, this.code]);
-
-        if (response.length === 0) {
-            if (mode === "login") {
-                throw new Error("This guest account does not exist. Please check your credentials and try again.", { cause: { statusCode: 1401 } });
-            } else throw new Error("User not found.", { cause: { statusCode: 1404 } });
-        }
-
-        this.id = response[0].id;
-        this.code = response[0].password;
-    }
-
-    async login(event: H3Event, config?: LoginConfig): Promise<void> {
+    async login(event: H3Event, config?: LoginConfig): Promise<string> {
         if (this.id === null && this.code === null) throw new Error("ID or code must be provided to fetch Guest.", { cause: { statusCode: 1400 } });
 
         // Fetch additional PII
@@ -74,6 +57,9 @@ export class GuestEntity {
             "language": Languages.EN
         }, this.database);
 
+        // Create session token
+        const sessionToken: string = await createUserToken(this);
         if (!config?.disableEndConnection) await this.database.end();
+        return sessionToken;
     }
 }

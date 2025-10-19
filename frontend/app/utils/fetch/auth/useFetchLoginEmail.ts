@@ -9,13 +9,8 @@ export const useFetchLoginEmail = async (email: string, password: string): Promi
     try {
         return await $fetch(`/api/auth/${useRoute().params.app}/login/email`, {
             method: "POST",
-            body: {
-                email,
-                password,
-            },
-            headers: {
-                "Content-Type": "application/json",
-            },
+            body: { email, password },
+            headers: { "Content-Type": "application/json" },
         });
     } catch (error: any) {
         throw formatError(error);

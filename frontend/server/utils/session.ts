@@ -1,7 +1,10 @@
 import { User, UserSession } from "#auth-utils";
+import { randomUUID } from "crypto";
 import type { H3Event } from "h3";
 import { Pool } from "mariadb";
 import { UserTypes } from "~/assets/customTypes";
+import { UserEntity } from "../core/ges/user";
+import { GuestEntity } from "../core/ges/guest";
 
 /**
  * Creates and returns a user session.
@@ -24,15 +27,9 @@ export async function createUserSession(event: H3Event, user: User, connection: 
             "language": user.language,
         },
         loggedInAt: new Date(),
-    }, {
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-        cookie: {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/',
-        }
-    });
+    }, user.type === UserTypes.GUEST ? {
+        maxAge: 60 * 60 * 4, // 4 hours for guests
+    } : undefined);
 
     // Update the last login date in the database
     const tableName: string = user.type === UserTypes.USER ? "user" : "guest";
@@ -40,4 +37,22 @@ export async function createUserSession(event: H3Event, user: User, connection: 
 
     // Return the user data
     return userSession.user as User;
+}
+
+/**
+ * Creates a persistent token for the user.
+ * 
+ * @param user The user data
+ * @param connection The database connection to use
+ * @returns The created token
+ */
+export async function createUserToken(user: UserEntity | GuestEntity): Promise<string> {
+    const token = randomUUID();
+    const type = user instanceof UserEntity ? UserTypes.USER : UserTypes.GUEST;
+    await user.database.query(`
+        DELETE FROM user_token WHERE object_id = ? AND object_type = ?;
+        INSERT INTO user_token (object_id, object_type, token, app_name) VALUES (?, ?, ?, ?);`,
+        [user.id, type,
+        user.id, type, token, user.appName]);
+    return token;
 }

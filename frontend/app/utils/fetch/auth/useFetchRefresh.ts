@@ -1,14 +1,15 @@
 /**
  * Refresh an existing user session.
- * @returns The status of the operation.
+ * @returns The token of the created session.
  * @throws An error if the request fails.
  */
-export const useFetchRefreshSession = async (): Promise<void> => {
+export const useFetchRefreshSession = async (): Promise<string> => {
     try {
-        await $fetch(`/api/auth/${useRoute().params.app}/refresh`, {
+        const token: string = await $fetch(`/api/auth/${useRoute().params.app}/refresh`, {
             method: "PUT",
         });
         await useUserSession().fetch();
+        return token;
     } catch (error: any) {
         throw formatError(error);
     }

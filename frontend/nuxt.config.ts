@@ -9,10 +9,18 @@ export default defineNuxtConfig({
         "nuxt-auth-utils",
     ],
     runtimeConfig: {
+        session: {
+            maxAge: 60 * 60 * 24 * 30, // 30 days
+            name: "overway_session",
+            password: process.env.NUXT_SESSION_PASSWORD || "",
+            cookie: {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+            }
+        },
         databaseHost: "",
         databasePort: "",
-        databaseNameSkp: "",
-        databaseNameSka: "",
         databaseUsername: "",
         databasePassword: "",
         mailHost: "",
@@ -30,7 +38,6 @@ export default defineNuxtConfig({
         uplinkRouter: "",
         public: {
             wsUrl: "",
-            appRedirectOverway: "",
             appRedirectAdministrator: "",
             appRedirectPlatform: "",
             appRedirectCommander: "",
