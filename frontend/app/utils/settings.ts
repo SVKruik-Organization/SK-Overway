@@ -1,6 +1,6 @@
 // Website settings and configuration
 
-import { AppTypes } from "~/assets/customTypes";
+import { AppTypes, UserTypes } from "~/assets/customTypes";
 
 const config = useRuntimeConfig();
 
@@ -58,4 +58,17 @@ export function getAppPreset(overwrite: AppTypes | undefined = undefined): {
     const appName = route.params.app as string | undefined;
     if (!appName) return appPresets.overway;
     return appPresets[appName as keyof typeof appPresets] || appPresets.overway;
+}
+
+/** Get the session TTL (time to live) in seconds based on user type.
+ * @param userType The type of user (USER or GUEST).
+ * @returns The session TTL in seconds.
+ */
+export function getSessionTTL(userType: UserTypes): {
+    maxAge: number;
+} {
+    const base = 60 * 60;
+    return {
+        maxAge: userType === UserTypes.GUEST ? base * 4 : base * 24 * 30, // 4 hours for guests, 30 days for users
+    };
 }

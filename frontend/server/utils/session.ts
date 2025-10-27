@@ -5,6 +5,7 @@ import { Pool } from "mariadb";
 import { UserTypes } from "~/assets/customTypes";
 import { UserEntity } from "../core/ges/user";
 import { GuestEntity } from "../core/ges/guest";
+import { getSessionTTL } from "~/utils/settings";
 
 /**
  * Creates and returns a user session.
@@ -17,19 +18,9 @@ import { GuestEntity } from "../core/ges/guest";
  */
 export async function createUserSession(event: H3Event, user: User, connection: Pool): Promise<User> {
     const userSession: UserSession = await replaceUserSession(event, {
-        user: {
-            "id": user.id,
-            "firstName": user.firstName,
-            "lastName": user.lastName,
-            "email": user.email,
-            "type": user.type,
-            "imageName": user.imageName,
-            "language": user.language,
-        },
-        loggedInAt: new Date(),
-    }, user.type === UserTypes.GUEST ? {
-        maxAge: 60 * 60 * 4, // 4 hours for guests
-    } : undefined);
+        "user": user,
+        "loggedInAt": new Date(),
+    }, getSessionTTL(user.type));
 
     // Update the last login date in the database
     const tableName: string = user.type === UserTypes.USER ? "user" : "guest";
@@ -49,10 +40,11 @@ export async function createUserSession(event: H3Event, user: User, connection: 
 export async function createUserToken(user: UserEntity | GuestEntity): Promise<string> {
     const token = randomUUID();
     const type = user instanceof UserEntity ? UserTypes.USER : UserTypes.GUEST;
+    const dateExpiry = new Date(Date.now() + getSessionTTL(type).maxAge * 1000);
     await user.database.query(`
-        DELETE FROM user_token WHERE object_id = ? AND object_type = ?;
-        INSERT INTO user_token (object_id, object_type, token, app_name) VALUES (?, ?, ?, ?);`,
+        DELETE FROM user_session WHERE object_id = ? AND object_type = ?;
+        INSERT INTO user_session (object_id, object_type, token, app_name, date_expiry) VALUES (?, ?, ?, ?, ?);`,
         [user.id, type,
-        user.id, type, token, user.appName]);
+        user.id, type, token, user.appName, dateExpiry]);
     return token;
 }

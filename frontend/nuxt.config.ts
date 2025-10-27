@@ -7,7 +7,13 @@ export default defineNuxtConfig({
     css: ["./app/assets/main.css"],
     modules: [
         "nuxt-auth-utils",
+        "nuxt-cron",
     ],
+    cron: {
+        runOnInit: true,
+        timeZone: "Europe/Amsterdam",
+        jobsDir: "core/tss/jobs",
+    },
     runtimeConfig: {
         session: {
             maxAge: 60 * 60 * 24 * 30, // 30 days
