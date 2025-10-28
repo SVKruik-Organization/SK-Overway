@@ -22,6 +22,17 @@ const loginButton = useTemplateRef<HTMLButtonElement>("loginButton");
 const verificationButton = useTemplateRef<HTMLButtonElement>("verificationButton");
 const guestButton = useTemplateRef<HTMLButtonElement>("guestButton");
 const isSubmissionInProgress: Ref<boolean> = ref(false);
+const previousInputValues: Ref<{
+    email: string;
+    password: string;
+    verification: string;
+    guest: string;
+}> = ref({
+    email: "",
+    password: "",
+    verification: "",
+    guest: "",
+});
 const username: Ref<string | null> = ref(null);
 
 // Methods
@@ -34,9 +45,13 @@ const username: Ref<string | null> = ref(null);
 async function submitLogin(): Promise<boolean> {
     try {
         if (isSubmissionInProgress.value) return false;
+        if (previousInputValues.value.email === emailInput.value && previousInputValues.value.password === passwordInput.value) return false;
         toggleButtonState(loginButton.value, true);
 
         if (!emailInput.value.length || !passwordInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
+        previousInputValues.value.email = emailInput.value;
+        previousInputValues.value.password = passwordInput.value;
+
         await signOut(); // Clear any existing session
         username.value = await useFetchLoginEmail(emailInput.value, passwordInput.value);
 
@@ -99,9 +114,12 @@ async function continueLogin(): Promise<boolean> {
 async function submit2fa(): Promise<boolean> {
     try {
         if (isSubmissionInProgress.value) return false;
+        if (previousInputValues.value.verification === verificationInput.value) return false;
         toggleButtonState(verificationButton.value, true);
 
         if (!emailInput.value.length || !verificationInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
+        previousInputValues.value.verification = verificationInput.value;
+
         const token: string = await useFetchSubmit2FA(emailInput.value, verificationInput.value);
         return handleSuccess(token);
     } catch (error: any) {
@@ -124,9 +142,12 @@ async function submit2fa(): Promise<boolean> {
 async function submitGuest(): Promise<boolean> {
     try {
         if (isSubmissionInProgress.value || !getAppPreset()?.guestLoginEnabled) return false;
+        if (previousInputValues.value.guest === guestInput.value) return false;
         toggleButtonState(guestButton.value, true);
 
         if (!guestInput.value.length) throw new Error("The form is not completed correctly. Please try again.");
+        previousInputValues.value.guest = guestInput.value;
+
         const token: string = await useFetchLoginGuest(guestInput.value);
         return handleSuccess(token);
     } catch (error: any) {

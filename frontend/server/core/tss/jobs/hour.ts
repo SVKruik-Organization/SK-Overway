@@ -7,7 +7,6 @@ export default defineCronHandler("hourly", async () => {
         await connection.query("DELETE FROM user_session WHERE date_expiry < CURRENT_TIMESTAMP;");
 
         log(`[CRON / Hour] Completed data cleaning process.`, "info");
-        return await connection.end();
     } catch (error: any) {
         logError(error);
     }

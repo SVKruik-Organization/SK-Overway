@@ -32,7 +32,6 @@ export default defineEventHandler(async (event): Promise<{
             SELECT object_id, object_type FROM user_session WHERE token = ? AND date_expiry > CURRENT_TIMESTAMP;
             UPDATE user_session SET date_last_usage = CURRENT_TIMESTAMP WHERE token = ?;`,
             [token, token]);
-        await connection.end();
         // response[1] is the result of the UPDATE query.
 
         if (!response.length || !response[0].length) throw new Error("The provided token is invalid or has expired. Please check your credentials and try again.", { cause: { statusCode: 1401 } });

@@ -48,7 +48,6 @@ export default defineEventHandler(async (event): Promise<string> => {
             "DELETE FROM user_verification WHERE user_email = ? AND reason = '2fa'; INSERT INTO user_verification (user_email, pin, reason) VALUES (?, ?, ?);",
             [email, email, verificationPin, "2fa"]);
 
-        await connection.end();
         return `${user.first_name} ${user.last_name}`;
     } catch (error: any) {
         throw formatApiError(error);

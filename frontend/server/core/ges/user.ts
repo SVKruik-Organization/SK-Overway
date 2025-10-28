@@ -5,7 +5,6 @@ import { sendMail } from "../gmd/sendMail";
 import { createUserToken } from "~~/server/utils/session";
 
 type LoginConfig = {
-    disableEndConnection?: boolean; // true to disable ending the DB connection after login
     disableSendMail?: boolean; // true to disable sending login notification email
 }
 
@@ -56,7 +55,6 @@ export class UserEntity {
 
         // Create session token
         const sessionToken: string = await createUserToken(this);
-        if (!config?.disableEndConnection) await this.database.end();
         return sessionToken;
     }
 }
