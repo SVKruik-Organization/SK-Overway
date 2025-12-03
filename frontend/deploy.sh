@@ -1,4 +1,6 @@
 #!/bin/sh
 
-npm run build
-docker build -t admin_site .
+echo "Building frontend docker image..."
+
+# npm run build
+# docker build -t admin_site .

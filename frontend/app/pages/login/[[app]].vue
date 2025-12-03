@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { createTicket } from "@svkruik/sk-platform-formatters";
 import { AppTypes, PromptTypes, type PopupItem } from "~/assets/customTypes";
 import { useFetchLoginEmail } from "~/utils/fetch/auth/useFetchLoginEmail";
 import { useFetchLoginGuest } from "~/utils/fetch/auth/useFetchLoginGuest";

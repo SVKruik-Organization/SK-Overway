@@ -1,6 +1,5 @@
-import amqp from "amqplib";
-import type { Channel, Message, Replies } from "amqplib";
-import { UplinkMessage } from "~/assets/customTypes";
+import { logError } from "@svkruik/sk-platform-formatters";
+import { mountUplink } from "@svkruik/sk-uplink-connector";
 
 /**
  * Uplink is a RabbitMQ consumer that listens for messages from the Uplink network.
@@ -11,35 +10,14 @@ import { UplinkMessage } from "~/assets/customTypes";
 export default defineNitroPlugin(async (_nitroApp) => {
     try {
         const runtimeConfig = useRuntimeConfig();
-        const channel: Channel | null = await (await amqp.connect({
-            "protocol": "amqp",
-            "hostname": runtimeConfig.uplinkHost,
-            "port": parseInt(runtimeConfig.uplinkPort as string),
+        await mountUplink(undefined, undefined, {
+            "host": runtimeConfig.uplinkHost,
+            "port": runtimeConfig.uplinkPort,
             "username": runtimeConfig.uplinkUsername,
-            "password": runtimeConfig.uplinkPassword
-        })).createChannel();
-
-        if (!channel) throw new Error("Uplink connection missing.");
-        channel.assertExchange(runtimeConfig.uplinkExchange, "direct", { durable: false });
-        const queue: Replies.AssertQueue = await channel.assertQueue("", { exclusive: true });
-        await channel.bindQueue(queue.queue, runtimeConfig.uplinkExchange, runtimeConfig.uplinkRouter);
-        log(`[Uplink / Consumer] Listening on exchange '${runtimeConfig.uplinkExchange}' binded to '${runtimeConfig.uplinkRouter}'.`, "info");
-
-        // Listen
-        channel.consume(queue.queue, (message: Message | null) => {
-            if (message) {
-                const messageContent: UplinkMessage = JSON.parse(message.content.toString());
-                switch (messageContent.task) {
-                    case "Deploy":
-                        // if (process.platform === "linux")
-                        break;
-                    default:
-                        log(`[Uplink / Consumer] Unknown task: ${messageContent.task}`, "warning");
-                        break;
-                }
-                channel.ack(message);
-            }
-        }, { noAck: false });
+            "password": runtimeConfig.uplinkPassword,
+            "exchangeName": runtimeConfig.uplinkExchange,
+            "routingKey": runtimeConfig.uplinkRouter
+        });
     } catch (error: any) {
         logError(error);
     }

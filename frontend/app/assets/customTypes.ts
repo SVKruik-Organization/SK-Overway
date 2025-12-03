@@ -40,23 +40,3 @@ export type DateFormat = {
     "time": string,
     "today": Date
 }
-
-export enum LogTypes {
-    info = "INFO",
-    warning = "WARNING",
-    alert = "ALERT",
-    error = "ERROR",
-    fatal = "FATAL",
-    none = "NONE",
-}
-
-// Uplink Network Payload
-export type UplinkMessage = {
-    sender: string;
-    recipient: string;
-    triggerSource: string;
-    reason: string;
-    task: string;
-    content: string;
-    timestamp: Date;
-};
