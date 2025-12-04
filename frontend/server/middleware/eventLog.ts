@@ -1,6 +1,5 @@
-import type { Pool } from "mariadb";
-import { database } from "#imports";
 import { logData, logError } from "@svkruik/sk-platform-formatters";
+import { database } from "@svkruik/sk-platform-db-conn";
 
 export default defineEventHandler(async (event) => {
     // Only for CUD operations
@@ -21,7 +20,7 @@ export default defineEventHandler(async (event) => {
                 data.description = session.user.firstName + " " + session.user.lastName;
             }
 
-            const connection: Pool = await database("central");
+            const connection = await database("central");
             await connection.query("INSERT INTO event_log (object_type, object_id, description, endpoint) VALUES (?, ?, ?, ?)", [...Object.values(data)]);
             logData(`New request: ${JSON.stringify(data)}`, "info");
         } catch (error: any) {

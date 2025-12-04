@@ -1,8 +1,7 @@
-import type { Pool } from "mariadb";
-import { database } from "#imports";
 import { z } from "zod";
 import { formatApiError, formatAppName } from "~/utils/format";
 import { sendMail } from "~~/server/core/gmd/sendMail";
+import { Pool, database } from "@svkruik/sk-platform-db-conn";
 
 // Validation schema for the request body
 const bodySchema = z.object({

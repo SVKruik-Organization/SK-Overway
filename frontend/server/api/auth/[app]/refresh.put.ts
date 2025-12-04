@@ -1,7 +1,7 @@
 import { formatApiError, formatAppName } from "~/utils/format";
 import { UserEntity } from "~~/server/core/ges/user";
 import { User } from "#auth-utils";
-import { Pool } from "mariadb/*";
+import { Pool, database } from "@svkruik/sk-platform-db-conn";
 
 /**
  * Refresh an existing user session. Not allowed for guest users.

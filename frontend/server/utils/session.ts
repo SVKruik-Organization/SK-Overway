@@ -1,11 +1,11 @@
 import { User, UserSession } from "#auth-utils";
 import { randomUUID } from "crypto";
 import type { H3Event } from "h3";
-import { Pool } from "mariadb";
 import { UserTypes } from "~/assets/customTypes";
 import { UserEntity } from "../core/ges/user";
 import { GuestEntity } from "../core/ges/guest";
 import { getSessionTTL } from "~/utils/settings";
+import { Pool } from "@svkruik/sk-platform-db-conn";
 
 /**
  * Creates and returns a user session.

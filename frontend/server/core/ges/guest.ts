@@ -1,8 +1,8 @@
-import { Pool } from "mariadb/*";
 import { Languages, UserTypes } from "~/assets/customTypes";
 import { H3Event } from "h3";
 import { sendMail } from "../gmd/sendMail";
 import { createUserToken } from "~~/server/utils/session";
+import { Pool } from "@svkruik/sk-platform-db-conn";
 
 type LoginConfig = {
     disableSendMail?: boolean; // true to disable sending login notification email
